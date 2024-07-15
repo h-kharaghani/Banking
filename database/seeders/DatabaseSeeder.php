@@ -14,19 +14,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if ($this->command->confirm('Do you want to add first user ?'))
-        {
+        if ($this->command->confirm('Do you want to add first user ?')) {
             $this->call(UserSeeder::class);
         }
-        if ($this->command->confirm('Do you want to add card Number ?'))
-        {
+        if ($this->command->confirm('Do you want to add account Number ?')) {
+            $this->call(AccountSeeder::class);
+        }
+        if ($this->command->confirm('Do you want to add card Number ?')) {
             $this->call(CardSeeder::class);
         }
-        User::factory()->create([
-            'name' => 'Hamid',
-            'mobile' => '09198274029',
-            'password' => '123456',
-        ]);
-        //todo: add accounts seeder
     }
 }

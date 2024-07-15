@@ -30,8 +30,8 @@ class BankException extends Exception
     public function render(): JsonResponse
     {
         return response()->json([
-            'status' => true,
+            'status' => false,
             'message' => $this->message
-        ]);
+        ], 500);
     }
 }
