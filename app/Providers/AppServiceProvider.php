@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Libraries\ConnectToService;
-use Illuminate\Foundation\Application;
+use App\Libraries\smsServiceProviders\KavehNegar;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,8 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(ConnectToService::class, function (Application $app) {
-            return new ConnectToService();
+        $this->app->bind('connectToService', function () {
+            $connection = new ConnectToService();
+            $connection->smsProvider = new KavehNegar();
+            return $connection;
         });
     }
 

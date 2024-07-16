@@ -4,8 +4,10 @@ namespace App\Libraries;
 
 class ConnectToService
 {
-    public function sms()
-    {
+    public $smsProvider;
 
+    public function sendSms($mobile, $message)
+    {
+        $this->smsProvider->send($mobile, $message);
     }
 }

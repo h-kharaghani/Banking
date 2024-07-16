@@ -41,7 +41,7 @@ class Helper
 
     public static function sendSms($mobile, $text)
     {
-        dispatch((new SmsJob($mobile, $text, $smsServiceProvider))->onQueue('banking-notification-queue'));
+        dispatch((new SmsJob($mobile, $text))->onQueue('banking-notification-queue'));
     }
 
     private static function getValidationMessage(string $messages): string
