@@ -35,6 +35,6 @@ class Card extends Model
 
     public function transactions(): HasMany
     {
-        return $this->hasMany(Transaction::class , 'origin_card_id');
+        return $this->hasMany(Transaction::class);
     }
 }

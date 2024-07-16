@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
@@ -11,8 +12,7 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'origin_card_id',
-        'destination_card_id',
+        'card_id',
         'amount',
         'description',
         'type',
@@ -31,5 +31,10 @@ class Transaction extends Model
     public function fee(): HasOne
     {
         return $this->hasOne(TransactionFee::class);
+    }
+
+    public function card(): BelongsTo
+    {
+        return $this->belongsTo(Card::class);
     }
 }

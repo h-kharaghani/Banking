@@ -12,12 +12,12 @@ return new class extends Migration {
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->integer('origin_card_id')->comment('آیدی کارت مبدا');
-            $table->integer('destination_card_id')->comment('آیدی کارت مقصد');
+            $table->integer('card_id')->comment('آیدی کارت مبدا');
             $table->string('amount')->comment('مبلغ تراکنش');
             $table->string('description')->comment('توضیحات');
             $table->tinyInteger('type')->comment('نوع تراکنش');
             $table->timestamps();
+            $table->foreign('card_id')->references('id')->on('cards')->cascadeOnUpdate()->cascadeOnDelete();
         });
     }
 

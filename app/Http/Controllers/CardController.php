@@ -65,9 +65,8 @@ class CardController extends Controller
             $originCardInfo->balance = $originCardInfo->balance - $amount;
             $originCardInfo->save();
             $transaction = $originCardInfo->transactions()->create([
-                'destination_card_id' => $destinationCardInfo->id,
                 'amount' => $amount,
-                'description' => 'card to card', //todo
+                'description' => 'card to card',
                 'type' => Transaction::card_to_card,
             ]);
             $transaction->fee()->create([
@@ -98,6 +97,51 @@ class CardController extends Controller
 
     public function getTransactions()
     {
+        $tenMinutesAgo = now()->subMinutes(1000);
+        // Step 1: Find the user with the most transactions in the last 10 minutes
+        $topUsers = User::with(['accounts.cards.transactions' => function ($query) use ($tenMinutesAgo) {
+            $query->where('created_at', '>=', $tenMinutesAgo)
+                ->orderBy('transactions_count', 'desc');
+        }])
+            ->take(3)
+            ->get();
+        $result = [];
+
+// Step 2: Get the last 10 transactions for each top user
+        foreach ($topUsers as $user) {
+            $transactions = $user->transactions()
+                ->where('transaction_date', '>=', $tenMinutesAgo)
+                ->orderBy('transaction_date', 'desc')
+                ->take(10)
+                ->get();
+
+            $result[] = [
+                'user' => $user,
+                'transactions' => $transactions
+            ];
+        }
+
+        return response()->json($result);
+
+        if ($topUser) {
+            // Step 2: Get the last 10 transactions for the top user
+            $transactions = $topUser->transactions()
+                ->where('created_at', '>=', $tenMinutesAgo)
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get();
+
+            return response()->json([
+                'user' => $topUser,
+                'transactions' => $transactions
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'No transactions found in the last 10 minutes.'
+            ]);
+        }
+
+
         // Get the current time and 10 minutes ago
         $now = now();
         $tenMinutesAgo = $now->subMinutes(1000);
