@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserAuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,4 +11,5 @@ Route::controller(UserAuthController::class)->prefix('user/')->group(function ()
 });
 
 
-Route::post('account/card/money/transfer', [\App\Http\Controllers\CardController::class, 'transfer'])->middleware('auth:sanctum');
+Route::post('card/transfer', [CardController::class, 'cardToCard'])->middleware('auth:sanctum');
+Route::get('card/transactions', [CardController::class, 'getTransactions']);

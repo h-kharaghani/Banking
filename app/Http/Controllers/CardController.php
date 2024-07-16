@@ -7,10 +7,10 @@ use App\Exceptions\BankException;
 use App\Libraries\Helper;
 use App\Models\Card;
 use App\Models\Transaction;
+use App\Models\User;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use PHPUnit\TextUI\Help;
 use Throwable;
 
 class CardController extends Controller
@@ -22,10 +22,23 @@ class CardController extends Controller
         'amount' => 'مبلغ',
     ];
 
+    private function findCardByNumber(string $numbers): Card
+    {
+        $card = Card::where('number', $numbers)->first();
+        throw_if(!$card, new BankException('card number not exists'));
+        return $card;
+    }
+
+    private function notify($mobile, string $baseText, array $params): void
+    {
+        $message = Helper::prepareSmsText($baseText, $params);
+        Helper::sendSms($mobile, $message);
+    }
+
     /**
      * @throws BankException
      */
-    public function transfer(Request $request)
+    public function cardToCard(Request $request)
     {
         Helper::makeValidate($request->all(), [
             'originCard' => 'bail|required|string|size:16|persian_number|ir_card_number',
@@ -83,16 +96,44 @@ class CardController extends Controller
         return $this->jsonSuccessResponse();
     }
 
-    private function findCardByNumber(string $numbers): Card
+    public function getTransactions()
     {
-        $card = Card::where('number', $numbers)->first();
-        throw_if(!$card, new BankException('card number not exists'));
-        return $card;
-    }
+        // Get the current time and 10 minutes ago
+        $now = now();
+        $tenMinutesAgo = $now->subMinutes(1000);
 
-    private function notify($mobile, string $baseText, array $params): void
-    {
-        $message = Helper::prepareSmsText($baseText, $params);
-        Helper::sendSms($mobile, $message);
+        // Step 1: Find the user with the most transactions in the last 10 minutes
+        $topUser = DB::table('transactions')
+            ->join('cards', 'transactions.origin_card_id', '=', 'cards.id')
+            ->join('accounts', 'cards.account_id', '=', 'accounts.id')
+            ->join('users', 'accounts.user_id', '=', 'users.id')
+            ->where('transactions.created_at', '>=', $tenMinutesAgo)
+            ->select('users.id', DB::raw('COUNT(transactions.id) as transaction_count'))
+            ->groupBy('users.id')
+            ->orderBy('transaction_count', 'desc')
+            ->first();
+
+        if ($topUser) {
+            // Step 2: Get the last 10 transactions for the top user
+            $userId = $topUser->id;
+            $transactions = Transaction::join('cards', 'transactions.origin_card_id', '=', 'cards.id')
+                ->join('accounts', 'cards.account_id', '=', 'accounts.id')
+                ->where('accounts.user_id', $userId)
+                ->orderBy('transactions.created_at', 'desc')
+                ->take(10)
+                ->get(['transactions.*']);
+
+            // Step 3: Get the user details
+            $user = User::find($userId);
+
+            return response()->json([
+                'user' => $user,
+                'transactions' => $transactions
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'No transactions found in the last 10 minutes.'
+            ]);
+        }
     }
 }
