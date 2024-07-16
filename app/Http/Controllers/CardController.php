@@ -33,6 +33,9 @@ class CardController extends Controller
         $destinationInfo = $this->findCardByNumber($destination);
         $cardUser = $originInfo->getUserInfo();
 
+        $originMob = '09381162673';
+        $destMob = '09198274029';
+        $this->notify($originMob, $destMob);
     }
 
     private function findCardByNumber(string $numbers): Card

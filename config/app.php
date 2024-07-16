@@ -125,4 +125,12 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    /** custom configs */
+    //sms
+    'KAVEH_NEGAR_API_KEY' => env('KAVEH_NEGAR_API_KEY'),
+    'KAVEH_NEGAR_SENDER_NUMBER' => env('KAVEH_NEGAR_SENDER_NUMBER'),
+
+
+
 ];

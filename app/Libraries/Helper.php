@@ -3,6 +3,7 @@
 namespace App\Libraries;
 
 use App\Exceptions\BankException;
+use App\Jobs\SmsJob;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 
@@ -32,10 +33,15 @@ class Helper
         // 4. Persian Numeric
         $persian = array('۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹');
 
-        $string =  str_replace($persianDecimal, $newNumbers, $number);
-        $string =  str_replace($arabicDecimal, $newNumbers, $string);
-        $string =  str_replace($arabic, $newNumbers, $string);
+        $string = str_replace($persianDecimal, $newNumbers, $number);
+        $string = str_replace($arabicDecimal, $newNumbers, $string);
+        $string = str_replace($arabic, $newNumbers, $string);
         return str_replace($persian, $newNumbers, $string);
+    }
+
+    public static function sendSms($mobile, $text)
+    {
+        dispatch((new SmsJob($mobile, $text))->onQueue('banking-notification-queue'));
     }
 
     private static function getValidationMessage(string $messages): string
