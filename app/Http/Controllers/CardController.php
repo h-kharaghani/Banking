@@ -29,37 +29,29 @@ class CardController extends Controller
         return $card;
     }
 
-    private function notify($mobile, string $baseText, array $params): void
-    {
-        $message = Helper::prepareSmsText($baseText, $params);
-        Helper::sendSms($mobile, $message);
-    }
-
     /**
+     * @param Request $request
+     * @return void
      * @throws BankException
      */
-    public function cardToCard(Request $request)
+    private function cardToCardValidation(Request $request): void
     {
         Helper::makeValidate($request->all(), [
             'originCard' => 'bail|required|string|size:16|persian_number|ir_card_number',
             'destinationCard' => 'bail|required|string|size:16|persian_number|ir_card_number',
             'amount' => 'bail|required|numeric|min:10000|max:500000000',
         ], self::validateMessages, self::validateAttributes);
-        $amount = $request->amount;
-        $origin = Helper::convertArabicToEnglish($request->originCard);
-        $destination = Helper::convertArabicToEnglish($request->destinationCard);
-        throw_if($origin == $destination, new BankException('bothCardsAreSame'));
+    }
 
-        $originCardInfo = $this->findCardByNumber($origin);
-        $destinationCardInfo = $this->findCardByNumber($destination);
-
-        $originCardOwner = auth()->user();
-        $destinationCardOwner = $destinationCardInfo->account->user;
-
-        throw_if($originCardInfo->balance <= $amount, new BankException('amount is more than balance'));
-        throw_if($originCardInfo->account->user->mobile != auth()->user()->mobile, new BankException('this is not this user card'));
-        throw_if(!$destinationCardOwner, new BankException('user not found'));
-
+    /**
+     * @param Card $originCardInfo
+     * @param mixed $amount
+     * @param Card $destinationCardInfo
+     * @return void
+     * @throws BankException
+     */
+    private function startToCardToCardTransfer(Card &$originCardInfo, mixed $amount, Card &$destinationCardInfo): void
+    {
         DB::beginTransaction();
         try {
             $originCardInfo->balance = $originCardInfo->balance - $amount;
@@ -79,18 +71,58 @@ class CardController extends Controller
             DB::rollBack();
             throw new BankException('card to card failed', 0, $exception);
         }
+    }
+
+    /**
+     * @param Card $originCardInfo
+     * @param mixed $amount
+     * @param $originCardOwner
+     * @param Card $destinationCardInfo
+     * @param $destinationCardOwner
+     * @return void
+     */
+    private function notify(Card $originCardInfo, mixed $amount, $originCardOwner, Card $destinationCardInfo, $destinationCardOwner): void
+    {
         $params = [
             'card_number' => $originCardInfo->number,
             'amount' => $amount,
             'balance' => $originCardInfo->balance,
         ];
-        $this->notify($originCardOwner->mobile, SmsText::decreaseـaccountـbalance, $params);
+        $origMsg = Helper::prepareSmsText(SmsText::decreaseـaccountـbalance, $params);
+        Helper::sendSms($originCardOwner->mobile, $origMsg);
+
         $params = [
             'card_number' => $destinationCardInfo->number,
             'amount' => $amount,
             'balance' => $destinationCardInfo->balance,
         ];
-        $this->notify($destinationCardOwner->mobile, SmsText::increaseـaccountـbalance, $params);
+        $destMsg = Helper::prepareSmsText(SmsText::increaseـaccountـbalance, $params);
+        Helper::sendSms($destinationCardOwner->mobile, $destMsg);
+    }
+
+    /**
+     * @throws BankException
+     */
+    public function cardToCardTransfer(Request $request)
+    {
+        $this->cardToCardValidation($request);
+        $amount = $request->amount;
+        $origin = Helper::convertArabicToEnglish($request->originCard);
+        $destination = Helper::convertArabicToEnglish($request->destinationCard);
+        throw_if($origin == $destination, new BankException('bothCardsAreSame'));
+
+        $originCardInfo = $this->findCardByNumber($origin);
+        $destinationCardInfo = $this->findCardByNumber($destination);
+
+        $originCardOwner = auth()->user();
+        $destinationCardOwner = $destinationCardInfo->account->user;
+
+        throw_if($originCardInfo->balance <= $amount, new BankException('amount is more than balance'));
+        throw_if($originCardInfo->account->user->mobile != auth()->user()->mobile, new BankException('this is not for this user'));
+        throw_if(!$destinationCardOwner, new BankException('user not found'));
+
+        $this->startToCardToCardTransfer($originCardInfo, $amount, $destinationCardInfo);
+        $this->notify($originCardInfo, $amount, $originCardOwner, $destinationCardInfo, $destinationCardOwner);
 
         return $this->jsonSuccessResponse();
     }
@@ -100,7 +132,7 @@ class CardController extends Controller
         $tenMinutesAgo = now()->subMinutes(10);
 
         // Step 1: Find the user with the most transactions in the last 10 minutes
-        $topUsers = Transaction::query()
+        $topUsersTransactions = Transaction::query()
             ->join('cards', 'transactions.card_id', '=', 'cards.id')
             ->join('accounts', 'cards.account_id', '=', 'accounts.id')
             ->join('users', 'accounts.user_id', '=', 'users.id')
@@ -109,11 +141,14 @@ class CardController extends Controller
             ->groupBy('users.id')
             ->orderBy('transaction_count', 'desc')
             ->limit(3)->get();
-        $userIds = array_column($topUsers->toArray(), 'id');
-        if (!empty($topUsers)) {
+        $userIds = array_column($topUsersTransactions->toArray(), 'id');
+        if (!empty($topUsersTransactions)) {
             $data = User::query()->whereIn('id', $userIds)->with(['transactions' => function (Builder $query) use ($tenMinutesAgo) {
                 $query->where('transactions.created_at', '>=', $tenMinutesAgo)->limit(10);
-            }])->get()->toArray();
+            }])->get()->map(function ($item) use ($topUsersTransactions) {
+                $item->transactions_count = collect($topUsersTransactions)->where('id', $item->id)->first()->transaction_count;
+                return $item;
+            })->toArray();
         } else {
             $data = [];
         }

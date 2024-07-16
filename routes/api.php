@@ -11,5 +11,7 @@ Route::controller(UserAuthController::class)->prefix('user/')->group(function ()
 });
 
 
-Route::post('card/transfer', [CardController::class, 'cardToCard'])->middleware('auth:sanctum');
-Route::get('card/transactions', [CardController::class, 'getTransactions']);
+Route::controller(CardController::class)->prefix('card/')->group(function () {
+    Route::post('transfers/cardToCard', 'cardToCardTransfer');
+    Route::get('transactions', 'getTransactions');
+})->middleware('auth:sanctum');
