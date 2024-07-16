@@ -14,11 +14,12 @@ class CardSeeder extends Seeder
      */
     public function run(): void
     {
-        $cardNums = ['6274129005473742', '6037697570194701'];
+        $cardNums = ['6274129005473742', '6037697570194701', '6277601266690179'];
+        $account = Account::first();
+        $accountId = $account->id;
         foreach ($cardNums as $cardNum) {
-
             Card::create([
-                'account_id' => Account::first()->id,
+                'account_id' => $accountId,
                 'number' => $cardNum,
                 'balance' => 500000,
                 'state' => Card::state_activated,
@@ -26,6 +27,7 @@ class CardSeeder extends Seeder
                 'issue_date' => now(),
                 'end_date' => now()->addYear(),
             ]);
+            $accountId++;
         }
     }
 }

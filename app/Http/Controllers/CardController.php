@@ -57,7 +57,7 @@ class CardController extends Controller
         $destinationCardOwner = $destinationCardInfo->account->user;
 
         throw_if($originCardInfo->balance <= $amount, new BankException('amount is more than balance'));
-        throw_if($originCardInfo->account->user->mobile != auth()->user()->mobile, new BankException('account info is wrong'));
+        throw_if($originCardInfo->account->user->mobile != auth()->user()->mobile, new BankException('this is not this user card'));
         throw_if(!$destinationCardOwner, new BankException('user not found'));
 
         DB::beginTransaction();
@@ -97,87 +97,27 @@ class CardController extends Controller
 
     public function getTransactions()
     {
-        $tenMinutesAgo = now()->subMinutes(1000);
-        // Step 1: Find the user with the most transactions in the last 10 minutes
-        $topUsers = User::with(['accounts.cards.transactions' => function ($query) use ($tenMinutesAgo) {
-            $query->where('created_at', '>=', $tenMinutesAgo)
-                ->orderBy('transactions_count', 'desc');
-        }])
-            ->take(3)
-            ->get();
-        $result = [];
-
-// Step 2: Get the last 10 transactions for each top user
-        foreach ($topUsers as $user) {
-            $transactions = $user->transactions()
-                ->where('transaction_date', '>=', $tenMinutesAgo)
-                ->orderBy('transaction_date', 'desc')
-                ->take(10)
-                ->get();
-
-            $result[] = [
-                'user' => $user,
-                'transactions' => $transactions
-            ];
-        }
-
-        return response()->json($result);
-
-        if ($topUser) {
-            // Step 2: Get the last 10 transactions for the top user
-            $transactions = $topUser->transactions()
-                ->where('created_at', '>=', $tenMinutesAgo)
-                ->orderBy('created_at', 'desc')
-                ->take(10)
-                ->get();
-
-            return response()->json([
-                'user' => $topUser,
-                'transactions' => $transactions
-            ]);
-        } else {
-            return response()->json([
-                'message' => 'No transactions found in the last 10 minutes.'
-            ]);
-        }
-
-
-        // Get the current time and 10 minutes ago
-        $now = now();
-        $tenMinutesAgo = $now->subMinutes(1000);
+        $tenMinutesAgo = now()->subMinutes(10);
 
         // Step 1: Find the user with the most transactions in the last 10 minutes
-        $topUser = DB::table('transactions')
-            ->join('cards', 'transactions.origin_card_id', '=', 'cards.id')
+        $topUsers = Transaction::query()
+            ->join('cards', 'transactions.card_id', '=', 'cards.id')
             ->join('accounts', 'cards.account_id', '=', 'accounts.id')
             ->join('users', 'accounts.user_id', '=', 'users.id')
             ->where('transactions.created_at', '>=', $tenMinutesAgo)
             ->select('users.id', DB::raw('COUNT(transactions.id) as transaction_count'))
             ->groupBy('users.id')
             ->orderBy('transaction_count', 'desc')
-            ->first();
-
-        if ($topUser) {
-            // Step 2: Get the last 10 transactions for the top user
-            $userId = $topUser->id;
-            $transactions = Transaction::join('cards', 'transactions.origin_card_id', '=', 'cards.id')
-                ->join('accounts', 'cards.account_id', '=', 'accounts.id')
-                ->where('accounts.user_id', $userId)
-                ->orderBy('transactions.created_at', 'desc')
-                ->take(10)
-                ->get(['transactions.*']);
-
-            // Step 3: Get the user details
-            $user = User::find($userId);
-
-            return response()->json([
-                'user' => $user,
-                'transactions' => $transactions
-            ]);
+            ->limit(3)->get();
+        $userIds = array_column($topUsers->toArray(), 'id');
+        if (!empty($topUsers)) {
+            $data = User::query()->whereIn('id', $userIds)->with(['transactions' => function (Builder $query) use ($tenMinutesAgo) {
+                $query->where('transactions.created_at', '>=', $tenMinutesAgo)->limit(10);
+            }])->get()->toArray();
         } else {
-            return response()->json([
-                'message' => 'No transactions found in the last 10 minutes.'
-            ]);
+            $data = [];
         }
+
+        return $this->jsonSuccessResponse($data);
     }
 }

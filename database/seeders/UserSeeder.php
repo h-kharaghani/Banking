@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
 
-        $mobiles = ['09198274029', '09381162673'];
+        $mobiles = ['09198274029', '09381162673' , '09121121212'];
         foreach ($mobiles as $key => $mobile) {
             User::create([
                 'name' => 'user_' . $key + 1,

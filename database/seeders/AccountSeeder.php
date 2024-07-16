@@ -14,15 +14,18 @@ class AccountSeeder extends Seeder
      */
     public function run(): void
     {
-        Account::create([
-            'user_id' => User::first()->id,
-            'bank_id' => 1,
-            'type' => Account::saving_account_type,
-            'state' => Account::state_activated,
-            'number' => '1111111111',
-            'sheba' => '12356789123456789123456',
-            'balance' => '2000000',
-            'end_date' => now()->addYear(),
-        ]);
+        $users = User::all();
+        foreach ($users as $key => $user) {
+            Account::create([
+                'user_id' => $user->id,
+                'bank_id' => 1,
+                'type' => Account::saving_account_type,
+                'state' => Account::state_activated,
+                'number' => rand(10000000000, 9999999999999),
+                'sheba' => '1235678912345678912345' . $key,
+                'balance' => '2000000',
+                'end_date' => now()->addYear(),
+            ]);
+        }
     }
 }
