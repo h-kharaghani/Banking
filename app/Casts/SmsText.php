@@ -10,14 +10,14 @@ class SmsText
     public const
         increaseـaccountـbalance =
         "\n"
-        . "واریز به حساب account_number مبلغ amount "
+        . "واریز به کارت: *card_number* مبلغ: *amount* "
         . "\n"
-        . "مانده موجودی: balance"
+        . "مانده موجودی: *balance*"
         . "\n"
     , decreaseـaccountـbalance =
         "\n"
-        . "برداشت از حساب account_number مبلغ amount "
+        . "برداشت از کارت: *card_number* مبلغ: *amount* "
         . "\n"
-        . "مانده موجودی: balance"
+        . "مانده موجودی: *balance*"
         . "\n";
 }

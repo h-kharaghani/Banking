@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->integer('account_id')->comment('آیدی حساب');
             $table->string('number')->unique()->comment('شماره کارت');
+            $table->string('balance')->comment('موجودی کارت');
             $table->tinyInteger('state')->comment('وضعیت');
             $table->tinyInteger('type')->comment('نوع کارت');
             $table->date('issue_date')->comment('تاریخ صدور');

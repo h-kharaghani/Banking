@@ -20,6 +20,7 @@ class CardSeeder extends Seeder
             Card::create([
                 'account_id' => Account::first()->id,
                 'number' => $cardNum,
+                'balance' => 500000,
                 'state' => Card::state_activated,
                 'type' => Card::normal,
                 'issue_date' => now(),

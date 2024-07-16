@@ -14,10 +14,13 @@ class UserSeeder extends Seeder
     public function run(): void
     {
 
-        User::factory()->create([
-            'name' => 'user1',
-            'mobile' => '09198274029',
-            'password' => '12345678',
-        ]);
+        $mobiles = ['09198274029', '09381162673'];
+        foreach ($mobiles as $key => $mobile) {
+            User::create([
+                'name' => 'user_' . $key + 1,
+                'mobile' => $mobile,
+                'password' => '12345678',
+            ]);
+        }
     }
 }

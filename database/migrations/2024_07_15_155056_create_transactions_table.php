@@ -17,7 +17,6 @@ return new class extends Migration {
             $table->string('amount')->comment('مبلغ تراکنش');
             $table->string('description')->comment('توضیحات');
             $table->tinyInteger('type')->comment('نوع تراکنش');
-            $table->date('transaction_date')->comment('تاریخ تراکنش');
             $table->timestamps();
         });
     }

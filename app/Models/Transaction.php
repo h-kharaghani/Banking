@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Transaction extends Model
 {
@@ -15,6 +16,20 @@ class Transaction extends Model
         'amount',
         'description',
         'type',
-        'transaction_date',
     ];
+
+    /** transactions types */
+    public const
+        card_to_card = 10,
+        buy_mobile_charge = 20,
+        prices = [
+        self::card_to_card => 5000,
+        self::buy_mobile_charge => 2000,
+    ];
+
+
+    public function fee(): HasOne
+    {
+        return $this->hasOne(TransactionFee::class);
+    }
 }

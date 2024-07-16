@@ -28,6 +28,6 @@ class SmsJob implements ShouldQueue
      */
     public function handle(): void
     {
-
+        
     }
 }

@@ -41,7 +41,7 @@ class Helper
 
     public static function sendSms($mobile, $text)
     {
-        dispatch((new SmsJob($mobile, $text))->onQueue('banking-notification-queue'));
+        dispatch((new SmsJob($mobile, $text, $smsServiceProvider))->onQueue('banking-notification-queue'));
     }
 
     private static function getValidationMessage(string $messages): string
@@ -52,5 +52,20 @@ class Helper
         }
         return $message;
 
+    }
+
+    public static function prepareSmsText(string $baseText, array $params): string
+    {
+        $message = '';
+        foreach ($params as $key => $param) {
+            if (!$message) {
+                $message = str_replace("*{$key}*", $params['card_number'], $baseText);
+            } else {
+                $message = str_replace("*{$key}*", $params['amount'], $message);
+                $message = str_replace("*{$key}*", $params['balance'], $message);
+
+            }
+        }
+        return $message;
     }
 }
