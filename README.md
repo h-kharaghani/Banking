@@ -11,6 +11,7 @@
 <p>
 
 - run : composer install
+- run : php artisan key:generate
 - run : php artisan migrate
 - run : php artisan db:seed
 - call :  /api/user/login to get the token {    "mobile": "09121121212",

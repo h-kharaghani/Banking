@@ -117,7 +117,7 @@ class CardController extends Controller
         $originCardOwner = auth()->user();
         $destinationCardOwner = $destinationCardInfo->account->user;
 
-        throw_if($originCardInfo->balance <= $amount, new BankException('amount is more than balance'));
+        throw_if($originCardInfo->balance <= ($amount + Transaction::prices[Transaction::card_to_card]), new BankException('amount is more than balance'));
         throw_if($originCardInfo->account->user->mobile != auth()->user()->mobile, new BankException('this is not for this user'));
         throw_if(!$destinationCardOwner, new BankException('user not found'));
 
