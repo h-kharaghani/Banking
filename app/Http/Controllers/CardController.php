@@ -129,6 +129,27 @@ class CardController extends Controller
 
     public function getTransactions()
     {
+        return User::with(['transactions' => function ($q) {
+
+            $q->where('transactions.created_at', '>', now()->subMinutes(10000))
+                ->orderBy('transactions.created_at', 'DESC')->limit(10);
+        }])->withCount(['transactions' => function($query){
+            $query->take(10);
+        }])
+            ->orderByDesc('transactions_count')
+            ->limit(3)
+            ->get();
+
+
+
+
+
+
+
+
+
+
+
         $tenMinutesAgo = now()->subMinutes(10);
 
         // Step 1: Find the user with the most transactions in the last 10 minutes
